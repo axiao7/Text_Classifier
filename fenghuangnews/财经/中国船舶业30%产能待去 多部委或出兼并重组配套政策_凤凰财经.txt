@@ -1,0 +1,333 @@
+
+/*正文内嵌内容*/
+/*正文内嵌内容*/
+.insertBlock{float:left;width:185px;padding:0 8px;margin-right:22px;display:inline;border:1px solid #3651AA; border-top:3px solid #3651AA;}
+.insertBlock div{float:left;width:100%; padding:6px 0 7px 0;background:url(http://img.ifeng.com/tres/finance/deco/2009/0727/dotline3.gif) repeat-x top;}
+.insertBlock h3{float:left;font-size:14px;color:#3651AA;}
+.insertBlock h3 span{font-weight:normal;}
+.insertBlock h4{float:left;width:100%;font-size:12px;}
+.insertBlock h4 span.up{color:#f00;}
+.insertBlock h4 span.down{color:#337416;}
+.insertBlock h5{float:left;width:100%;font-size:12px;font-weight:normal;height:20px;overflow:hidden;}
+.insertBlock a,.insertBlock a:hover{color:#3651AA;}
+.insertBlock h5 a{display:block; float:left; padding: 0 18px 0 0;}
+.insertBlock h5 a.p0{padding-right:0;}
+
+.special{border:none;padding:5px 0 25px 20px;margin:0;width:580px;}
+.special div{background:none;padding:0;}
+.special div.txtLink{padding:5px 0 0 63px;font-size:12px;color:#004276;}
+
+
+var code_map = Array();
+var code_type_map = Array();
+var getHQ = function(str) {
+    var code_str = '';
+    var arr = str.split(',');
+	var num = arr.length;
+ if (num ==1)
+		{
+		  document.getElementById("js_clear").style.display = "block";
+		}
+
+    for (var i in arr)
+    {
+        var temp_arr = arr[i].split(':');
+        var code = temp_arr[0];
+        var name = temp_arr[1];
+        var type = temp_arr[2];
+        code_str += code + ',';
+        code_map[code] = name;
+        code_type_map[code] = type;
+    }
+    code_str = code_str.substr(0, code_str.length-1);
+    
+    //通过单纯js实现
+    var requestURL = 'http://hq.finance.ifeng.com/q.php?l='+code_str+'&f=json&e=show('+num+');';
+    var objHead = document.getElementsByTagName('head');
+    var objScript = document.createElement('script');
+    objScript.type = 'text/javascript';
+    objScript.src = requestURL;
+    objHead[0].appendChild(objScript);
+};
+
+var show = function(num) {
+    var load = function(obj, fn) {//图片加载，非IE情况下
+        obj.onload = function() {
+            if (obj.complete === true) {
+                fn(obj);
+            }
+        };
+    };
+    var u = window.navigator.userAgent.toLocaleLowerCase();
+    var bs = u.match(/(msie) ([\d.]+)/);
+    if(bs && bs[1] === 'msie') {
+        load = function(obj, fn) {//解决IE下图片加载事件不兼容
+            obj.timer = window.setInterval(function() {
+                if (obj.readyState === 'complete') {
+                    window.clearInterval(obj.timer);
+                    fn(obj);
+                } else {
+                    return;
+                }
+            }, 10);
+        };
+    }
+    var str = '';
+    var n = 0;
+    var index = 0;
+    var code_arr = [];
+    for(var item in json_q) {
+        json_q[item] && code_arr.push(item);
+    }
+    var forItem = function() {
+        if(index === code_arr.length) {
+            document.getElementById("inner_hq").innerHTML = str;
+            return;
+        }
+        var code = code_arr[index];
+        var flag = true;
+        var last = (json_q[code][0] == undefined) ? '--' : json_q[code][0].toFixed(2);
+        var chg = (json_q[code][2] == undefined) ? '' : json_q[code][2].toFixed(2);
+        var chg_pct = (json_q[code][3] == undefined) ? '' : json_q[code][3].toFixed(2);
+        var fullcode;
+        var pic_state = '';
+        var code2 = '';
+        var color_cls = '';
+        if (chg_pct > 0) {
+            color_cls = 'class="up"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_up.gif" />';
+        } else if (chg_pct < 0) {
+            color_cls = 'class="down"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_down.gif" />';
+        } else {
+            pic_state = '-';
+        }
+
+        if (chg == '') {
+            chg = '0';
+        } else if (chg == undefined) {
+            chg = '--';
+        } else {
+            chg = Math.abs(chg);
+        }
+
+        if (chg_pct == '') {
+            chg_pct = '0';
+        } else if (chg_pct == undefined) {
+            chg_pct = '--';
+        } else {
+            chg_pct = Math.abs(chg_pct)+'%';
+        }
+        var code_prefix = "";
+        str += '<div>';
+        switch (code_type_map[code]) {
+            case 'stock': //股票
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    //alert(ImgObj.src);
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div><div class="txtLink"><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a> | <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a> | <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a> | <a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a> | <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a> | <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a> </div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                if(num>=2){
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span>(<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span><a class="a_gp" target="_blank" href="http://app.finance.ifeng.com/custom/mystock_opt.php?type=add&amp;code='+fullcode+'">自选股</a></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a>  <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                    str += '    <h5><a href="http://guba.finance.ifeng.com/forumdisplay.php?code='+fullcode+'" target="_blank">个股股吧</a>  <a href="http://ustock.finance.ifeng.com/stock.php?code='+fullcode+'" target="_blank">优股预测</a>  <a href="http://app.finance.ifeng.com/stock/longhubang/stock_detail.php?code='+code2+'" target="_blank" class="p0">龙虎榜</a></h5>';
+                }
+                break;
+            case 'fund': //基金
+                if (code.indexOf('of') != -1) {//开放式
+                    fullcode = code.replace('snv_', '');
+                    code2 = fullcode.replace('of', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank">基金净值</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jztj.php?symbol='+code2+'" target="_blank" class="p0">净值回报</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                } else {//封闭式
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank" class="p0">基金净值</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                }
+                break;
+            case 'hkstock': //港股
+                code_prefix = "";
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('hk','');
+                if (fullcode.indexOf('hk') != -1) {
+                    code_prefix = 'HK:';
+                }
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/info/news_ggxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://finance.ifeng.com/hk/pj/index.shtml" target="_blank" class="p0">大行评级</a></h5>';
+                break;
+            case 'bond': //债券
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('sh', '');
+                code2 = code2.replace('sz', '');
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/bond_daily.php?code='+fullcode+'" target="_blank">每日行情</a>  <a href="http://finance.ifeng.com/money/bond/index.shtml" target="_blank" class="p0">债市新闻</a></h5>';
+
+                break;
+            case 'stock_index': //股指
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                else{
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/gszb/" target="_blank">股市直播</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank">资金流向</a>  <a href="http://app.finance.ifeng.com/hq/stock_scan.php" target="_blank" class="p0">市场雷达</a></h5>';
+                }
+                break;
+            case 'int': //国际股指
+                break;
+            case 'option': //权证
+                break;
+            case 'futures': //期货
+                break;
+        }
+
+        if(flag) {
+            str += '</div>';
+            index++;
+            forItem();
+        }
+    };
+    forItem();
+};
+       
+getHQ('s_sh600150:中国船舶:stock');
+郭大成表示，
+中国船舶
+行业
+当前迫在眉睫的困难是去库存。“未来三四年要用的船都已造出来了，而且由于违约成本太低，交付十分困难。”
+近日，成立于1956年的扬子江船业黯然取消了原计划的公司60周年庆典，作为中国最大的民营船厂，它正面临着前所未有的生死考验。
+“全年的目标能完成三分之一就不错了。明年形势肯定还好不了，后年还是这样的话，就很难能活得下去了。”扬子江船业副总经理张涛称，企业已制定了5%末尾淘汰的刚性裁员指标。继去年裁员6000人后，这家企业计划在今年年底前再裁员2000人。
+扬子江的背后，整个中国船舶工业正面临着有史以来最为严峻的挑战。
+金融
+危机以来航运业的深度调整对船舶业造成了重创，新船价格大幅下跌，成交量、手持订单极度萎缩，主要造船企业全面陷入困境。中国船舶业由于此前的恶性竞争，更是面临着库存高企、交付困难的窘境。
+目前，工信部会同发改委正在研究编制《船舶工业深化结构调整加快转型升级行动计划（2016-2020年）》，围绕海洋强国的战略目标，确定了“十三五”期间的重点任务，包括化解造船产能过剩、推进军民融合、打造智能船厂、推进行业混合所有制改革等。
+据悉，该规划已进入最后评审阶段，年内有望正式发布。
+21世纪经济报道记者还了解到，应对危机，中国船舶行业需要去除30%以上的产能。
+船舶危机
+短期看，包括中国在内的整个船舶行业正在面临一次危机。
+中国船舶工业行业协会会长郭大成告诉21世纪经济报道记者，和
+钢铁
+煤炭面临的困境不同，中国船舶遭遇的危机是全球性现象，更多地来自整个国际环境的骤然转冷。
+船舶是全球一体化的产业，与世界经济及贸易紧密相关，8年前国际金融危机的爆发对船舶工业的影响远超预期，全球造船业正面临着金融危机以来最为严峻的挑战。
+首当其冲的是航运市场，2016年以来，航运市场持续恶化，波罗的海
+干散货
+运价指数一度跌至290点，创有史以来最低水平。中国出口
+集装箱
+运价指数也持续在800点以下的历史低位振荡，克拉克松综合运费指数从2015年年中的18000
+美元
+/天一路下滑至2016年9月的8000美元/天。
+按照航运市场正常年份7.3吨/载重吨每年的运输效率计算，目前航运市场过剩运力达到22%，航运市场过剩运力的吸收需要5-10年的时间。
+航运危机使得船东订造新船的能力不断下滑。中国船舶工业经济与市场研究中心发布的一份报告称，2009-2015年，全球新船市场年均成交量为1.1亿载重吨，但2016年前三季度全球新船成交量仅为2284万载重吨，同比大幅下滑74%，创出了本轮船市危机以来的新低，且后续的手持订单明显乏力。
+新船价格也在大幅下跌。报告显示，2016年以来，克拉克松新船价格指数呈现单边下行态势，9月份这一指数已下探至125点，跌破危机后126点的最低记录。其中油船、集装箱船新船价格较危机前高点下跌幅度约40%，散货船新船价格跌幅更是超过50%，已跌破多数船厂成本线，多数企业处于无利甚至亏损接单状态。
+受此影响，中日韩等主要造船国全面陷入困境：全球活跃船厂数量从金融危机前900多家减少到目前的400家。
+工信部副部长辛国斌在10月27日召开的船舶工业调结构促转型增效益座谈会上介绍，2016年前9月，中国造船完工量2493 万载重吨，同比下降15.1%；截至9月底，手持船舶订单1.09亿载重吨，同比下降18.1%。业内普遍认为，航运市场和造船市场严重过剩的局面在短期内难以得到改善。
+郭大成表示，中国船舶行业当前迫在眉睫的困难是去库存。“未来三四年要用的船都已造出来了，而且由于违约成本太低，交付十分困难。”
+郭大成表示，船舶业是定制模式，按说不会出现高库存危机，但在中国却出现了，其背后是行业多年的恶性竞争。
+“一般船舶订单要有20%-30%的定金，但是有些企业，尤其是部分国企为了抢夺订单，不惜以低至1%的定金来接单，接单后基本全靠自己贷款来造船，这造成了违约成本极低。所以，在船舶业兴旺的时候出现了很多投机现象：部分订单并非由用船企业提出来，而是由投机商提出的。当在行业深度调整时，就发生了大量违约，交付极难。”
+大量无法交付的船舶占用了船厂大量的资金，并将后者拖至生死的边缘。
+去除30%产能
+中期看，应对船舶危机，去产能是绕不开的问题。
+工信部装备工业司司长李东在10月27日的座谈会上介绍，目前船舶行业全球总产能达到两亿吨，但实际需求却只有1亿吨，目前韩国及日本的船舶行业削减产能幅度都超过40%。
+“中国此前通过淘汰、消化、整合、转移过剩产能，已将2012年的8000万载重吨的产能削减至2015年底的6500万载重吨，然而仍然存在着无效产能，中国造船业必须‘痩体’，估计削减30%以上的过剩产能。”李东说。
+这意味着中国需要去除近2000万载重吨的造船产能。
+但在郭大成看来，30%是一个相当保守的数字，他向21世纪经济报道记者表示，整个造船市场后续需求也十分疲软，有报告预测，2016-2020年全球新造船年均需求可能仅有6000万载重吨，即便日韩不生产，中国的产能也可以满足全球的需求。
+那么，应该去掉哪些企业的产能？这是一个各个企业互相扯皮的问题。
+在
+外高桥
+造船董事长王琦看来，去产能的关键在于防止反复。“民企是‘潮汐式企业’，涨潮了就来，退潮了就休眠。它可以暂时休眠，但设施没去掉，形势稍微好一点，它又来了，这就像癌症一样，反复发作，市场就好不了。”
+中远船务副总经理倪涛持同样观点，他将民企称为“开关企业”，认为国企大厂承担社会责任，将产能去彻底了，会有更多的小企业产能的反弹。
+江苏新时代造船副董事长朱炳康则反驳称，民营企业以市场为行动标准，追求企业效益最大化并无过错，现在行业的利润大都在民营企业，去产能不能只盯着民营企业。
+他认为，去产能应以市场效益为标准，一部分民企经营状况不好应当去掉，但国有企业同样也要去。“在现在状况下，国有企业有各方面的保障，产能是肯定去不掉的，我们担心最后倒下的都是民营企业。”
+朱炳康进一步称，去产能也不能简单地划定数量指标，要求各个企业都公布去产能目标，应当由市场规律来定。
+李东表示，央企、国企、民企都是造船行业的主力军，在去产能过程中会一视同仁地对待。
+多位受访船企向21世纪经济报道记者表示，希望在去产能过程中有更多的政策托底。比如希望在拆除、搬迁时能将腾出的土地变现，历史上的一些船厂大都靠江靠海，身处沿海发达地区，船企希望能自由处置这些土地，以此来补贴去产能过程中的债务和人员安置，然而这无疑会受到地方政府的较大阻力。
+弯道超
+车
+的机遇
+从长期看，船舶市场的深度调整或许蕴藏着更大的机遇。
+纵观近百年船舶发展史，市场的任何一次重大调整都是世界船舶工业版图重构的关键时点，日本赶超欧洲，韩国赶超日本，概莫能外。
+全球造船业中，中日韩三国基本维持“三足鼎立”的竞争格局。当前的危机对日韩冲击更大：截至9月底，日本和韩国活跃船厂数量占比分别仅为18%和22%，我国活跃船厂占比25%。
+辛国斌认为，相对而言，中国的韧性更强，对市场的承受力更高，回旋余地和发展潜力也更大，这是一个机遇。
+数据显示， 2016年前三季度，中、日、韩接单份额分别为70%、12%和15%，中国船厂在中国矿运、
+招商轮船
+等订造的30艘VLOC订单的支撑下，市场份额重回全球首位。
+而从更长远看，船舶市场需求有望在“十三五”期间触底回升。前述报告认为，2016-2017年，新船年均需求量在4000万载重吨以下，2018-2020年或将回升至8000万载重吨。随着当下船舶进入拆解船龄，预计2021-2025年新造船市场年均需求将回升至8500万载重吨左右，2026-2030年有望再度突破1亿载重吨。
+此时是补短板的好时机。中国在降本增效上空间巨大，辛国斌称，如果中国造船效率水平每提升一个百分点，全行业将可节约人工成本2亿-3亿元。
+据了解，中国正在智能船舶方面加快研究布局。除《船舶工业深化结构调整加快转型升级行动计划（2016-2020年）》外，目前工信部还在编制《推进船舶智能制造指导意见》，希望在智能船舶上由跟随向领跑转变。
+在推进船舶企业的兼并重组方面，据公开报道，未来多个部委将联合推出促进船舶企业兼并重组的配套政策，有望在财政和金融等多个方面给予支持。
+
+<!--
+var code_list = "sh601872,sh600648,sh600150";
+//-->
+

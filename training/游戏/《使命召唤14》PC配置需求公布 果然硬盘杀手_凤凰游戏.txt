@@ -1,0 +1,42 @@
+原标题：《使命召唤14：二战》PC配置需求公布 果然硬盘杀手
+ 
+期待已久，今日Sledgehammer（大锤）工作室终于公布了《使命召唤14：二战》PC配置需求。此外，还宣布游戏于10月27日（今天）可以在Steam上预载。
+ 
+从配置需求来看，《使命召唤14：二战》的要求不低，尤其是硬盘空间需求达到了90GB，妥妥又一款硬盘杀手。
+ 
+与此同时，官方还调整了各类显示器的视角范围，对一些屏幕比例进行了限制，确保使用超宽屏、多屏的用户，不会获得额外的优势。
+ 
+Sledgehammer确认，《使命召唤14：二战》原生支持多屏系统，且提供了HDR技术支持。此外，提升了高精度鼠标的流畅度。
+ 
+此前，Sledgehammer就表示，游戏发售时会自带一套完整的反外挂、作弊系统，确保游戏有一个良好的公平竞技环境。 
+ 
+ 
+具体PC配置需求如下：
+ 
+推荐配置
+ 
+OS: Windows 7 64-Bit或更新
+ 
+CPU: Intel Core i5-2400 或 AMD Ryzen R5 1600X
+ 
+内存: 12GB
+ 
+硬盘: 90 GB
+ 
+显卡: NVIDIA GeForce GTX 970 / GTX 1060 6GB 或 AMD Radeon R9 390 / AMD RX 580
+ 
+DirectX：DX 11显卡或同级别
+ 
+最低配置
+ 
+OS: Windows 7 64-Bit或更新
+ 
+CPU: CPU: Intel Core i3 3225 3.3 GHz or AMD Ryzen 5 1400
+ 
+内存: 8GB
+ 
+硬盘: 90GB
+ 
+显卡: NVIDIA GeForce GTX 660 2 GB / GTX 1050 或 ATI Radeon HD 7850  2GB / AMD RX 550
+ 
+DirectX：DX 11显卡或同级别

@@ -1,0 +1,302 @@
+
+/*正文内嵌内容*/
+/*正文内嵌内容*/
+.insertBlock{float:left;width:185px;padding:0 8px;margin-right:22px;display:inline;border:1px solid #3651AA; border-top:3px solid #3651AA;}
+.insertBlock div{float:left;width:100%; padding:6px 0 7px 0;background:url(http://img.ifeng.com/tres/finance/deco/2009/0727/dotline3.gif) repeat-x top;}
+.insertBlock h3{float:left;font-size:14px;color:#3651AA;}
+.insertBlock h3 span{font-weight:normal;}
+.insertBlock h4{float:left;width:100%;font-size:12px;}
+.insertBlock h4 span.up{color:#f00;}
+.insertBlock h4 span.down{color:#337416;}
+.insertBlock h5{float:left;width:100%;font-size:12px;font-weight:normal;height:20px;overflow:hidden;}
+.insertBlock a,.insertBlock a:hover{color:#3651AA;}
+.insertBlock h5 a{display:block; float:left; padding: 0 18px 0 0;}
+.insertBlock h5 a.p0{padding-right:0;}
+
+.special{border:none;padding:5px 0 25px 20px;margin:0;width:580px;}
+.special div{background:none;padding:0;}
+.special div.txtLink{padding:5px 0 0 63px;font-size:12px;color:#004276;}
+
+
+var code_map = Array();
+var code_type_map = Array();
+var getHQ = function(str) {
+    var code_str = '';
+    var arr = str.split(',');
+	var num = arr.length;
+ if (num ==1)
+		{
+		  document.getElementById("js_clear").style.display = "block";
+		}
+
+    for (var i in arr)
+    {
+        var temp_arr = arr[i].split(':');
+        var code = temp_arr[0];
+        var name = temp_arr[1];
+        var type = temp_arr[2];
+        code_str += code + ',';
+        code_map[code] = name;
+        code_type_map[code] = type;
+    }
+    code_str = code_str.substr(0, code_str.length-1);
+    
+    //通过单纯js实现
+    var requestURL = 'http://hq.finance.ifeng.com/q.php?l='+code_str+'&f=json&e=show('+num+');';
+    var objHead = document.getElementsByTagName('head');
+    var objScript = document.createElement('script');
+    objScript.type = 'text/javascript';
+    objScript.src = requestURL;
+    objHead[0].appendChild(objScript);
+};
+
+var show = function(num) {
+    var load = function(obj, fn) {//图片加载，非IE情况下
+        obj.onload = function() {
+            if (obj.complete === true) {
+                fn(obj);
+            }
+        };
+    };
+    var u = window.navigator.userAgent.toLocaleLowerCase();
+    var bs = u.match(/(msie) ([\d.]+)/);
+    if(bs && bs[1] === 'msie') {
+        load = function(obj, fn) {//解决IE下图片加载事件不兼容
+            obj.timer = window.setInterval(function() {
+                if (obj.readyState === 'complete') {
+                    window.clearInterval(obj.timer);
+                    fn(obj);
+                } else {
+                    return;
+                }
+            }, 10);
+        };
+    }
+    var str = '';
+    var n = 0;
+    var index = 0;
+    var code_arr = [];
+    for(var item in json_q) {
+        json_q[item] && code_arr.push(item);
+    }
+    var forItem = function() {
+        if(index === code_arr.length) {
+            document.getElementById("inner_hq").innerHTML = str;
+            return;
+        }
+        var code = code_arr[index];
+        var flag = true;
+        var last = (json_q[code][0] == undefined) ? '--' : json_q[code][0].toFixed(2);
+        var chg = (json_q[code][2] == undefined) ? '' : json_q[code][2].toFixed(2);
+        var chg_pct = (json_q[code][3] == undefined) ? '' : json_q[code][3].toFixed(2);
+        var fullcode;
+        var pic_state = '';
+        var code2 = '';
+        var color_cls = '';
+        if (chg_pct > 0) {
+            color_cls = 'class="up"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_up.gif" />';
+        } else if (chg_pct < 0) {
+            color_cls = 'class="down"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_down.gif" />';
+        } else {
+            pic_state = '-';
+        }
+
+        if (chg == '') {
+            chg = '0';
+        } else if (chg == undefined) {
+            chg = '--';
+        } else {
+            chg = Math.abs(chg);
+        }
+
+        if (chg_pct == '') {
+            chg_pct = '0';
+        } else if (chg_pct == undefined) {
+            chg_pct = '--';
+        } else {
+            chg_pct = Math.abs(chg_pct)+'%';
+        }
+        var code_prefix = "";
+        str += '<div>';
+        switch (code_type_map[code]) {
+            case 'stock': //股票
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    //alert(ImgObj.src);
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div><div class="txtLink"><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a> | <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a> | <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a> | <a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a> | <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a> | <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a> </div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                if(num>=2){
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span>(<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span><a class="a_gp" target="_blank" href="http://app.finance.ifeng.com/custom/mystock_opt.php?type=add&amp;code='+fullcode+'">自选股</a></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a>  <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                    str += '    <h5><a href="http://guba.finance.ifeng.com/forumdisplay.php?code='+fullcode+'" target="_blank">个股股吧</a>  <a href="http://ustock.finance.ifeng.com/stock.php?code='+fullcode+'" target="_blank">优股预测</a>  <a href="http://app.finance.ifeng.com/stock/longhubang/stock_detail.php?code='+code2+'" target="_blank" class="p0">龙虎榜</a></h5>';
+                }
+                break;
+            case 'fund': //基金
+                if (code.indexOf('of') != -1) {//开放式
+                    fullcode = code.replace('snv_', '');
+                    code2 = fullcode.replace('of', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank">基金净值</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jztj.php?symbol='+code2+'" target="_blank" class="p0">净值回报</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                } else {//封闭式
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank" class="p0">基金净值</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                }
+                break;
+            case 'hkstock': //港股
+                code_prefix = "";
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('hk','');
+                if (fullcode.indexOf('hk') != -1) {
+                    code_prefix = 'HK:';
+                }
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/info/news_ggxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://finance.ifeng.com/hk/pj/index.shtml" target="_blank" class="p0">大行评级</a></h5>';
+                break;
+            case 'bond': //债券
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('sh', '');
+                code2 = code2.replace('sz', '');
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/bond_daily.php?code='+fullcode+'" target="_blank">每日行情</a>  <a href="http://finance.ifeng.com/money/bond/index.shtml" target="_blank" class="p0">债市新闻</a></h5>';
+
+                break;
+            case 'stock_index': //股指
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                else{
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/gszb/" target="_blank">股市直播</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank">资金流向</a>  <a href="http://app.finance.ifeng.com/hq/stock_scan.php" target="_blank" class="p0">市场雷达</a></h5>';
+                }
+                break;
+            case 'int': //国际股指
+                break;
+            case 'option': //权证
+                break;
+            case 'futures': //期货
+                break;
+        }
+
+        if(flag) {
+            str += '</div>';
+            index++;
+            forItem();
+        }
+    };
+    forItem();
+};
+       
+getHQ('s_sh601299:中国北车:stock');
+证券时报记者李雪峰
+ 
+昨日再度触及跌停，中国中
+车
+（601766）的踩踏在继续。
+ 
+截至昨日收盘，中国中车6月8日复牌后累计下跌26.72%，若从中国中车复牌后的股价涨停板开板日（6月9日）算起，则中国中车跌幅达到33.4%。以273亿股的总股本测算，中国中车复牌后市值共减少2149亿元，6月9日至今其市值则跌去2954亿元。
+ 
+另一组数据则是，
+中国南车
+停牌前最后一个交易日（5月6日）的市值为4065亿元，
+中国北车
+同一天的市值为3036亿元。换言之，中国南车吸并中国北车而组建的中国中车在复牌后短短数个交易日内，其蒸发的市值相当于被吸并前的中国北车总市值。
+ 
+目前中国中车的市值约为5891亿元，扣除两车换股合并所产生的约1000亿元市值增厚效应，中国中车的市值仅相当于合并前的中国南车。
+ 
+也就是说，中国北车不见了？
+ 
+如果说此前中国北车因换股合并而被注销是一种形式的消失，那么中国中车数以千亿级别的市值蒸发，则是中国北车另一种形式的消失。仅从市值角度而言，中国南车与中国北车的合并动作就是消灭中国北车的过程，未起到市值上的协同效应。
+ 
+有必要强调的是，上述言论仅系调侃，中国北车确实已经消失，但这种消失只是名义上的消失，其股份、业务、人员等已悉数融入合并之后的中国中车。
+ 
+作为国资委甚至更高层面的大动作，南北车合并的战略意义不言而喻，此次合并对高铁产业的重构及对中国企业实施“走出去战略”的影响将会一一显现，后续存在合并预期的央企亦可复制南北车的合并路径。
+ 
+业界习惯以两种视角审视南北车的合并及央企的历次重组，一是产业层面，二是股价层面。所不同的是，评估南北车合并对产业的影响可能需要很长一段周期，而股价则可以瞬时反应。
+ 
+当南北车因存在合并预期而致股价大幅攀升时，市场将合并视为国家战略，中国中车亦被贴上“中国名片”的标签；而当南北车完成合并，中国中车股价连续暴跌时，该公司又被扣上“第二个中石油”的帽子，合并行为本身则被情绪化解读为制造垄断。
+ 
+假设中国中车复牌后连续上涨并突破万亿市值，令波音、空客望尘莫及，是否还会被扣帽子呢？然而，投资不能假设，中国中车股价连续暴跌已成为既定事实，至少说明相当一部分投资者认为中国中车目前的风险高于收益。
+ 
+没有人能预料到中国中车会否就此止跌，也鲜有研究机构对中国中车的合理股价及市值作出预判。中金公司曾在中国中车复牌时以“王者归来”为题，预测中国中车未来12个月内市值或达9555亿元，但中金公司的预判是“在当前资本市场乐观情绪下最为乐观的假设”，即存在“双乐观”前提。
+ 
+现在贸然判断中国中车从高铁沦为绿皮火车可能为时过早，即便是国内最顶级的研究员，可能也无法下结论。末了，不妨提醒一下投资者，每一轮牛市的终结都会以绞杀一大批投资者为代价，在自己可控制的范围内参与投资很有必要，中国中车亦是如此。
+
+<!--
+var code_list = "sh601766,sh601299";
+//-->
+

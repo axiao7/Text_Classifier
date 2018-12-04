@@ -1,0 +1,309 @@
+
+/*正文内嵌内容*/
+/*正文内嵌内容*/
+.insertBlock{float:left;width:185px;padding:0 8px;margin-right:22px;display:inline;border:1px solid #3651AA; border-top:3px solid #3651AA;}
+.insertBlock div{float:left;width:100%; padding:6px 0 7px 0;background:url(http://img.ifeng.com/tres/finance/deco/2009/0727/dotline3.gif) repeat-x top;}
+.insertBlock h3{float:left;font-size:14px;color:#3651AA;}
+.insertBlock h3 span{font-weight:normal;}
+.insertBlock h4{float:left;width:100%;font-size:12px;}
+.insertBlock h4 span.up{color:#f00;}
+.insertBlock h4 span.down{color:#337416;}
+.insertBlock h5{float:left;width:100%;font-size:12px;font-weight:normal;height:20px;overflow:hidden;}
+.insertBlock a,.insertBlock a:hover{color:#3651AA;}
+.insertBlock h5 a{display:block; float:left; padding: 0 18px 0 0;}
+.insertBlock h5 a.p0{padding-right:0;}
+
+.special{border:none;padding:5px 0 25px 20px;margin:0;width:580px;}
+.special div{background:none;padding:0;}
+.special div.txtLink{padding:5px 0 0 63px;font-size:12px;color:#004276;}
+
+
+var code_map = Array();
+var code_type_map = Array();
+var getHQ = function(str) {
+    var code_str = '';
+    var arr = str.split(',');
+	var num = arr.length;
+ if (num ==1)
+		{
+		  document.getElementById("js_clear").style.display = "block";
+		}
+
+    for (var i in arr)
+    {
+        var temp_arr = arr[i].split(':');
+        var code = temp_arr[0];
+        var name = temp_arr[1];
+        var type = temp_arr[2];
+        code_str += code + ',';
+        code_map[code] = name;
+        code_type_map[code] = type;
+    }
+    code_str = code_str.substr(0, code_str.length-1);
+    
+    //通过单纯js实现
+    var requestURL = 'http://hq.finance.ifeng.com/q.php?l='+code_str+'&f=json&e=show('+num+');';
+    var objHead = document.getElementsByTagName('head');
+    var objScript = document.createElement('script');
+    objScript.type = 'text/javascript';
+    objScript.src = requestURL;
+    objHead[0].appendChild(objScript);
+};
+
+var show = function(num) {
+    var load = function(obj, fn) {//图片加载，非IE情况下
+        obj.onload = function() {
+            if (obj.complete === true) {
+                fn(obj);
+            }
+        };
+    };
+    var u = window.navigator.userAgent.toLocaleLowerCase();
+    var bs = u.match(/(msie) ([\d.]+)/);
+    if(bs && bs[1] === 'msie') {
+        load = function(obj, fn) {//解决IE下图片加载事件不兼容
+            obj.timer = window.setInterval(function() {
+                if (obj.readyState === 'complete') {
+                    window.clearInterval(obj.timer);
+                    fn(obj);
+                } else {
+                    return;
+                }
+            }, 10);
+        };
+    }
+    var str = '';
+    var n = 0;
+    var index = 0;
+    var code_arr = [];
+    for(var item in json_q) {
+        json_q[item] && code_arr.push(item);
+    }
+    var forItem = function() {
+        if(index === code_arr.length) {
+            document.getElementById("inner_hq").innerHTML = str;
+            return;
+        }
+        var code = code_arr[index];
+        var flag = true;
+        var last = (json_q[code][0] == undefined) ? '--' : json_q[code][0].toFixed(2);
+        var chg = (json_q[code][2] == undefined) ? '' : json_q[code][2].toFixed(2);
+        var chg_pct = (json_q[code][3] == undefined) ? '' : json_q[code][3].toFixed(2);
+        var fullcode;
+        var pic_state = '';
+        var code2 = '';
+        var color_cls = '';
+        if (chg_pct > 0) {
+            color_cls = 'class="up"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_up.gif" />';
+        } else if (chg_pct < 0) {
+            color_cls = 'class="down"';
+            pic_state = '<img src="http://img.ifeng.com/tres/finance/deco/2009/0727/icon_down.gif" />';
+        } else {
+            pic_state = '-';
+        }
+
+        if (chg == '') {
+            chg = '0';
+        } else if (chg == undefined) {
+            chg = '--';
+        } else {
+            chg = Math.abs(chg);
+        }
+
+        if (chg_pct == '') {
+            chg_pct = '0';
+        } else if (chg_pct == undefined) {
+            chg_pct = '--';
+        } else {
+            chg_pct = Math.abs(chg_pct)+'%';
+        }
+        var code_prefix = "";
+        str += '<div>';
+        switch (code_type_map[code]) {
+            case 'stock': //股票
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    //alert(ImgObj.src);
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div><div class="txtLink"><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a> | <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a> | <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a> | <a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a> | <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a> | <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a> </div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                if(num>=2){
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+                    if (fullcode.indexOf('sh') != -1) {
+                        code_prefix = 'SH:';
+                    } else if (fullcode.indexOf('sz') != -1) {
+                        code_prefix = 'SZ:';
+                    }
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span>(<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span><a class="a_gp" target="_blank" href="http://app.finance.ifeng.com/custom/mystock_opt.php?type=add&amp;code='+fullcode+'">自选股</a></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/stock_bill.php?code='+fullcode+'" target="_blank">大单追踪</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank" class="p0">资金流向</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/report/search.php?yb_search_type=stock&code='+code2+'" target="_blank">最新研报</a>  <a href="http://app.finance.ifeng.com/info/news_gsxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://app.finance.ifeng.com/data/stock/lsgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                    str += '    <h5><a href="http://guba.finance.ifeng.com/forumdisplay.php?code='+fullcode+'" target="_blank">个股股吧</a>  <a href="http://ustock.finance.ifeng.com/stock.php?code='+fullcode+'" target="_blank">优股预测</a>  <a href="http://app.finance.ifeng.com/stock/longhubang/stock_detail.php?code='+code2+'" target="_blank" class="p0">龙虎榜</a></h5>';
+                }
+                break;
+            case 'fund': //基金
+                if (code.indexOf('of') != -1) {//开放式
+                    fullcode = code.replace('snv_', '');
+                    code2 = fullcode.replace('of', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank">基金净值</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jztj.php?symbol='+code2+'" target="_blank" class="p0">净值回报</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                } else {//封闭式
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://finance.ifeng.com/app/hq/fund/'+fullcode+'/" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/data/fund/fhqk.php?symbol='+code2+'" target="_blank">基金分红</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjz.php?symbol='+code2+'" target="_blank" class="p0">基金净值</a></h5>';
+                    str += '    <h5><a href="http://app.finance.ifeng.com/data/fund/zqmx.php?symbol='+code2+'" target="_blank">基金重仓</a>  <a href="http://app.finance.ifeng.com/data/fund/jjjl.php?symbol='+code2+'" target="_blank">基金经理</a>  <a href="http://app.finance.ifeng.com/data/fund/jjgg.php?symbol='+code2+'" target="_blank" class="p0">最新公告</a></h5>';
+                }
+                break;
+            case 'hkstock': //港股
+                code_prefix = "";
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('hk','');
+                if (fullcode.indexOf('hk') != -1) {
+                    code_prefix = 'HK:';
+                }
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">'+code_prefix+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/hkstock/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/info/news_ggxw.php?code='+fullcode+'" target="_blank">公司新闻</a>  <a href="http://finance.ifeng.com/hk/pj/index.shtml" target="_blank" class="p0">大行评级</a></h5>';
+                break;
+            case 'bond': //债券
+                fullcode = code.replace('s_', '');
+                code2 = fullcode.replace('sh', '');
+                code2 = code2.replace('sz', '');
+                str += '    <h3><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                str += '	<h5><a href="http://finance.ifeng.com/app/hq/bond/'+fullcode+'/index.shtml" target="_blank">行情走势</a>  <a href="http://app.finance.ifeng.com/hq/bond_daily.php?code='+fullcode+'" target="_blank">每日行情</a>  <a href="http://finance.ifeng.com/money/bond/index.shtml" target="_blank" class="p0">债市新闻</a></h5>';
+
+                break;
+            case 'stock_index': //股指
+                if(num ==1){
+                    document.getElementById("inner_hq").className+=" special";
+                    code_prefix = "";
+                    fullcode = code.replace('s_', '');
+
+                    var ImgObj = new Image();
+                    ImgObj.src = "http://img.ifengimg.com/astock/kline/"+fullcode+".gif";
+                    ImgObj.onerror = function() {
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    };
+                    flag = false;
+                    load(ImgObj, function(ImgObj) {
+                        if (ImgObj.fileSize > 0 || (ImgObj.width > 0 && ImgObj.height > 0)) {
+                            code2 = fullcode.replace('sh', '');
+                            code2 = code2.replace('sz', '');
+                            str += ' <div><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank"><img width=530 height=390 src=http://img.ifengimg.com/astock/kline/'+fullcode+'.gif  alt=k线图></a></div></div>';
+                        } else {
+                            str += ' </div>';
+                        }
+                        str += '</div>';
+                        index++;
+                        forItem();
+                    });
+                }
+                else{
+                    fullcode = code.replace('s_', '');
+                    code2 = fullcode.replace('sh', '');
+                    code2 = code2.replace('sz', '');
+                    str += '    <h3><a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code_map[code]+'</a><span> (<a href="http://finance.ifeng.com/app/hq/stock/'+fullcode+'/index.shtml" target="_blank">'+code2+'</a>)</span></h3>';
+                    str += '	<h4>最新价：<span '+color_cls+'>'+last+' '+pic_state+' '+chg+'  '+chg_pct+'</span></h4>';
+                    str += '	<h5><a href="http://app.finance.ifeng.com/gszb/" target="_blank">股市直播</a>  <a href="http://app.finance.ifeng.com/hq/trade/stock_zijin.php?code='+fullcode+'" target="_blank">资金流向</a>  <a href="http://app.finance.ifeng.com/hq/stock_scan.php" target="_blank" class="p0">市场雷达</a></h5>';
+                }
+                break;
+            case 'int': //国际股指
+                break;
+            case 'option': //权证
+                break;
+            case 'futures': //期货
+                break;
+        }
+
+        if(flag) {
+            str += '</div>';
+            index++;
+            forItem();
+        }
+    };
+    forItem();
+};
+       
+getHQ('s_sz300160:秀强股份:stock');
+事项:
+ 
+秀强股份
+公告:公司三季报业绩比上年同期增长:61%--83% 
+ 
+评论:
+ 
+三季报业绩预增61%-83%,超预期。
+ 
+10月12日晚间,秀强股份公告预计今年前三季度业绩同比增长61%-83%,预计实现盈利4500-5100万元。公司业绩主要由家电玻璃和太阳能镀膜玻璃贡献,而其中,家电玻璃是业绩贡献的主力,历史数据证明,该部分一般占到收入贡献的七到八成。公司家电玻璃下游主要运用于电冰箱领域,根据国家统计局以及产业在线最新数据显示,今年1-8月, 全国电冰箱累计生产6446万台,同比下降1.3%,1-7月全国电冰箱累计销售4684万台,同比下降3.86%。
+行业
+整体表现出同比微降的运行态势,而秀强此时预告三季度业绩大幅预增,超出市场预期,也超出我们预期。
+ 
+业绩预增主因市场开拓、成本下降、盈利提升等。
+ 
+根据公司公告我们分析公司实现业绩超预期增长有如下原因:(1)报告期,公司积极开拓市场,主营产品的销售量较去年同期增长约28%,生产量的增加提高了产品的规模化程度、产品的单位生产成本下降,主营产品的盈利能力显著提高; (2)报告期,公司非经常性损益约为-180至-80万元,去年同期非经常性损益为-504.39万元;(3)我们认为随着行业竞争日趋激烈,原先不具备成本优势的中小企业逐步退出,公司凭借自身技术、成本、品牌优势提升一定市场份额从而实现销售上超越行业平均增速的增长;(4)去年三季度收入增速平平,同时三季度发生非流动资产处置损失,拉低一定业绩基数。
+ 
+彩晶玻璃哪家强,江苏宿迁找秀强。
+ 
+秀强股份是中国最大的家电玻璃制造商,此外,公司还涉足太阳能玻璃领域。在家电玻璃方面,特别是彩晶玻璃方面, 公司是子行业的龙头,公司曾接受国家标准化委员会邀请,参与起草安全玻璃、镀膜玻璃、彩晶玻璃的国家标准,根据此前公司公告数据显示,预计公司目前在彩晶玻璃领域的市场占有率约达50%。而公司家电玻璃的销售毛利率整体多数保持在30%以上,其中彩晶玻璃的毛利率水平又最为抢眼,根据历史披露数据上看,基本维持在31-45%的波动区间。在家电这个平均毛利率并不高的产业链上面,公司能常年保持这样的毛利率水平,已经可以反映出公司的议价能力和技术壁垒,行业龙头地位瞻显。
+ 
+“二次创业”终于迈出里程碑一步,涉足教育产业。
+ 
+秀强股份9月14日晚间公告:公司拟与实际控制人卢秀强先生、江苏炎昊投资管理有限公司(以下简称“炎昊投资”) 及其他优先级有限合伙人(待定)共同投资设立新余道生天成教育产业基金(有限合伙)(暂定名,最终以工商核名为准。以下简称“道生天成基金”或“合伙企业”)。
+ 
+道生天成基金总出资规模为5亿元,其中首期规模2亿元。公司作为有限合伙人认缴基金份额的10%作为中间级,首期使用自有资金出资2,000万元;实际控制人卢秀强先生作为有限合伙人认缴基金份额的20%作为劣后级,首期出资4,000万元;江苏炎昊投资管理有限公司作为基金普通合伙人(GP)认缴基金规模的1%,首期出资200万元;另外13,800万元由炎昊投资负责寻找优先级有限合伙人募集得到。 道生天成基金将作为公司布局教育产业的平台,对优质的教育领域的标的进行筛选、储备和孵化,充分发挥资本市场的作用,为公司整合教育产业链资源提供充足准备。
+ 
+自去年以来,市场一直有关于公司“二次创业”的猜测,此次产业基金的设立,明确了公司转型方向,也是公司在双主业探索上迈出了里程碑的一步。
+ 
+政策支持、资本关注,加上互联网技术的渗透,教育市场有望迎来爆发。
+ 
+自2010年《国家中长期教育改革和发展规划纲要(2010-2020)》发布以来,民办教育与教育信息化成为教育行业发展中的重点,国内教育事业进入高速发展时期。 自2010年以来,全国教育经费投入保持15%以上的年复合增长,15年以来,公共财政在教育领域支出的同比增速也呈现快速上升的态势。 教育市场的潜力正引发社会各领域的关注:根据搜狗&腾讯教育联合发布数据显示,2014年教育行业搜索流量上涨了47%, 移动端搜索流量上涨幅度高达72%。教育市场的潜力同样引发了市场创业热情和资本的关注:从WIND 披露数据上看, 近几年在教育行业的创业案呈现出翻倍的增长;根据IT 橘子数据显示,14年-15年3月,公司搜集到的206起教育行业n 高管增持,员工持股计划拟实施,管理层动力足。
+ 
+秀强股份为民营企业,公司实际控制人之一卢秀强先生于2015年7月29日、7月30日、7月31日增持公司股份1,142,900股,占公司总股本的0.61%,增持均价为17.39元/股;又于8月31日、9月1日、9月2日,增持公司股份4,924,481股,占公司总股本的2.64%,增持均价为14.12元/股。两次合计增持607万股,均价14.74元/股,占公司总股本的3.2%。目前公司股价13.5元/股,已低于老板的增持价格。
+ 
+此外,公司拟实施第一期员工持股计划。秀强炎昊专项投资基金按照2:1的比例设立优先级份额和次级份额,预计总规模为7830万元,其中员工以合法薪酬、自筹资金及其他合法合规方式获得的资金拟筹集不超过2610万元,并全额认购炎昊投资设立的秀强炎昊专项投资基金1号的次级份额。根据最新公告,目前该专项投资基金尚未购买公司股票。
+ 
+上调今明两年业绩预测,主业有望维持两年高增长,新领域爆发可期,继续给予“买入”评级。
+ 
+如上文分析所述,公司主营家电玻璃下游需求稳定,行业整体保持平稳可期,公司为该领域的行业龙头,市场占有率稳定,结合三季报预增公告,再加上今年下半年大尺寸高投射可见光AR 镀膜玻璃项目投放对业绩的支撑,我们上调公司2015-2017年业绩预测至7000万元(同增91.9%)、1亿元(同增42.4%)、1.13亿元(同增13.1%),对应EPS 分别为0.37/0.53/0.60元/股,对应PE 为50.4/35.4/31.3x,其中,因教育产业基金暂未收购项目,无法进行未来盈利预测, 因此上述盈利预测尚未涵盖。考虑到公司今明两年业绩仅依靠主业即可实现的高增长,我们认为近期公司股价的强劲表现仅仅是对主业业绩高增长的一个反应,以及在大盘反弹,创业板整体表现强势下的估值修复行情,而尚未反应公司未来在教育领域发展的潜力,因此我们认为,现阶段仍可积极参与,并密切关注公司在教育产业基金领域的相关投资项目推进情况,继续给予“买入”评级。
+
+<!--
+var code_list = "sz300160";
+//-->
+
